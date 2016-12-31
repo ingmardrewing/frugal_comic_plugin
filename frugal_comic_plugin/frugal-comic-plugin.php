@@ -3,8 +3,13 @@
 Plugin Name: FrugalComicPlugin
 */
 
-/* Adds a meta box to the post edit screen */
 add_action( 'add_meta_boxes', 'fcp_add_custom_box' );
+add_action( 'save_post', 'fcp_save_postdata' );
+
+add_action( 'wp_head', 'fcp_add_html_header_elements');
+add_filter( 'the_content', 'fcp_modify_content');
+
+/* Adds a meta box to the post edit screen */
 function fcp_add_custom_box() {
     $screens = array( 'post', 'my_cpt' );
     foreach ( $screens as $screen ) {
@@ -17,10 +22,14 @@ function fcp_add_custom_box() {
     }
 }
 
-add_action('wp_head', 'fcp_add_link_tags_to_head');
-function fcp_add_link_tags_to_head(){
+function fcp_add_html_header_elements (){
+  global $post;
+  $header_elements  = fcp_get_link_tags( $post )
+  $header_elements .= fcp_add_og_meta( $post );
+  echo $header_elements;
+}
 
-    global $post;
+function fcp_get_link_tags( $post ){
 
     $start_issue_url = 'http://devabo.de/2013/08/01/a-step-in-the-dark/'  ;
     $start_link = '<link ref="start" title="A step in the dark" href="'. $start_issue_url .'" />';
@@ -32,68 +41,76 @@ function fcp_add_link_tags_to_head(){
     $next_url = get_permalink(get_adjacent_post(false,'',false));
     $this_url = get_permalink($post);
 
-    echo $start_link . "\n";
-    echo $prev_link . "\n";
+    $tags = $start_link . "\n";
+    $tags .= $prev_link . "\n";
 
     if( $next_url != $this_url ){
       $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
       $title = get_the_title(get_adjacent_post(false,'',false));
       $next_link = '<link ref="next" title="'. $title .'" href="'. $next_issue_url .'" />';
       $prefetch_link = '<link ref="prefetch" title="'. $title .'" href="'. $next_issue_url .'" />';
-      echo $next_link . "\n";
-      echo $prefetch_link . "\n";
+
+      $tags .= $next_link . "\n";
+      $tags .= $prefetch_link . "\n";
     }
+
+    return $tags;
 };
 
-add_action('wp_head', 'fcp_og_meta');
-function fcp_og_meta (){
-  global $post;
+function fcp_og_meta ( $post ){
   $comic_image_url = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
   $this_title = get_the_title( $post );
-  $this_url = get_permalink($post);
+  $this_url   = get_permalink($post);
 
-  echo '<meta property="og:image" content="' . $comic_image_url . '">' . "\n";
-  echo '<meta property="og:title" content="' . $this_title . '">' . "\n";
-  echo '<meta property="og:url" content="' . $this_url . '">' . "\n";
-  echo '<meta property="og:type" content="website">' . "\n";
+  $tags  = '<meta property="og:image" content="' . $comic_image_url . '">' . "\n";
+  $tags .= '<meta property="og:title" content="' . $this_title . '">' . "\n";
+  $tags .= '<meta property="og:url" content="' . $this_url . '">' . "\n";
+  $tags .= '<meta property="og:type" content="website">' . "\n";
+
+  return $tags;
 }
 
-add_filter('the_content', 'fcp_modify_content');
 function fcp_modify_content( $content ){
   global $post;
-  $comic_image_url = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
+  $first_comic_url = "https://s3-us-west-1.amazonaws.com/devabode-us/comicstrips/DevAbode_0001.png"; 
   $next_post = get_next_post();
   $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true ); 
 
-  $js = "";
-  if( empty( $next_post )){
-    $js = fcp_write_comic_preload_js("https://s3-us-west-1.amazonaws.com/devabode-us/comicstrips/DevAbode_0001.png" ) ;
-  }
-  else if( empty( $next_comic_image_url ) ){
-    return $content ;
-  }
-  else{
-    $js = fcp_write_comic_preload_js($next_comic_image_url ) ;
+  if( ! empty( $next_post ) && empty( $next_comic_image_url ) ){
+    return $content;
   }
 
- return $js . fcp_rewrite_content($content, $this_img_url, get_permalink($next_post->ID) ) ;
+  $new_content = fcp_rewrite_content($content, get_post_meta( $post->ID, '_fcp_comic_image_url', true ), get_permalink($next_post->ID) ) ; 
+
+  if( empty( $next_post )){
+    $js = fcp_get_comic_preload_js($first_comic_url) ;
+    return $js . $new_content
+  }
+
+  $js = fcp_get_comic_preload_js($next_comic_image_url ) ;
+  return $js . $new_content;
 }
 
 function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL) {
-  global $post;
-  $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
+  $latest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
+  $first_issue_id = 8;
 
-  $navi= fcp_write_navigation(8, $dom);
-  $soc_med = fcp_write_socmed();
+  $oldest_issue_url = 'http://devabo.de/2013/08/01/a-step-in-the-dark/' ;
+  $prev_issue_url   = get_permalink(get_adjacent_post(false,'',true))  ;
+  $next_issue_url   = get_permalink(get_adjacent_post(false,'',false)) ;
+  $newest_issue_url =  get_permalink( $latest_issue_id);
+
+  $navi= fcp_get_navigation( $first_issue_id, $latest_issue_id $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url);
   $img = fcp_get_image_html( $content, $next_issue_url );
+  $soc_med = fcp_get_socmed();
 
   if( preg_match( '/DevAbode_\d+.png/', $content  ) ){
-    return '' . $img . $navi . $soc_med ;
+    return $img . $navi . $soc_med ;
   }
   return $content ;
 }
 
-function fcp_write_socmed (){
+function fcp_get_socmed () {
   global $post;
   $this_url = get_permalink($post);
   $this_perm_urlenc = urlencode( get_permalink( $post ) );
@@ -117,7 +134,7 @@ function fcp_get_image_html( $content, $url ){
   return '<p><a href="' . $url . '" rel="next">' . $match[0] . '</a></p>';
 }
 
-function fcp_write_comic_preload_js($next_img_url ) {
+function fcp_get_comic_preload_js($next_img_url ) {
   $js = "<script language='javascript'>jQuery(window).load(function(){ ";
   if( ! empty( $this_img_url ) ){
     $js .= " var img = jQuery('<img>')[0]; img.src = \"" . $next_img_url . "\";";
@@ -126,20 +143,12 @@ function fcp_write_comic_preload_js($next_img_url ) {
   return $js;
 }
 
-function fcp_write_navigation ( $min_post_id , $dom ){
-  $latest_cpt = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'));
-  $my_latest_post_id = $latest_cpt[0]['ID'];
-
-  $is_newest_post =  get_the_ID() < $min_post_id ) && ( $latest_cpt[0]['ID'] != get_the_ID() ;
-  $is_first_post =  get_the_ID() < $min_post_id + 1 ;
-
-  $oldest_issue_url = 'http://devabo.de/2013/08/01/a-step-in-the-dark/' ;
-  $prev_issue_url = get_permalink(get_adjacent_post(false,'',true))  ;
-  $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
-  $newest_post_url =  get_permalink( $my_latest_post_id);
+function fcp_get_navigation ( $first_issue_id, $latest_issue_id , $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url){
+  $is_newest_post =  get_the_ID() < $first_issue_id ) && ( $latest_cpt[0]['ID'] != get_the_ID() ;
+  $is_first_post =  get_the_ID() < $first_issue_id + 1 ;
 
   $html = '<div id="stripnav" style="width: 100%;text-align:right; margin-bottom:80px;"><ul>';
-  $html .= fcp_add_navi_li( ! $is_newest_post, $newest_post_url,  "newest &gt;&gt;");
+  $html .= fcp_add_navi_li( ! $is_newest_post, $newest_issue_url,  "newest &gt;&gt;");
   $html .= fcp_add_navi_li( ! $is_newest_post, $next_issue_url,   "next&gt;");
   $html .= fcp_add_navi_li( ! $is_first_post,  $prev_issue_url,   "&lt; previous");
   $html .= fcp_add_navi_li( ! $is_first_post,  $oldest_issue_url, "&lt;&lt; first");
@@ -169,31 +178,31 @@ function fcp_inner_custom_box( $post ) {
   <?php
 }
 
-add_action( 'save_post', 'fcp_save_postdata' );
+/* save the image url of the comic page image */
 function fcp_save_postdata( $post_id ) {
-    if ( array_key_exists('fcp_field', $_POST ) ) {
-      if( $_POST['fcp_field'] ){
+  if ( array_key_exists('fcp_field', $_POST ) ) {
+    if( $_POST['fcp_field'] ){
+      update_post_meta( $post_id,
+          '_fcp_comic_image_url',
+          $_POST['fcp_field']
+      );
+    }
+    else {
+      $content_post = get_post($post_id);
+      $content = $content_post->post_content;
+      $dom = new DOMDocument();
+      $dom->loadHTML($content);
+      $img = $dom->getElementsByTagName('img')->item(0);
+      $src = NULL;
+      if($img != NULL){
+        $src = $img->getAttribute('src');
+      }
+      if( $src != NULL ) {
         update_post_meta( $post_id,
-           '_fcp_comic_image_url',
-            $_POST['fcp_field']
+          '_fcp_comic_image_url',
+          $src
         );
       }
-      else {
-        $content_post = get_post($post_id);
-        $content = $content_post->post_content;
-        $dom = new DOMDocument();
-        $dom->loadHTML($content);
-        $img = $dom->getElementsByTagName('img')->item(0);
-        $src = NULL;
-        if($img != NULL){
-          $src = $img->getAttribute('src');
-        }
-        if( $src != NULL ) {
-          update_post_meta( $post_id,
-           '_fcp_comic_image_url',
-            $src
-          );
-        }
     }
   }
 }
