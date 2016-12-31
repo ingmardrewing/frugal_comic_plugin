@@ -85,7 +85,7 @@ function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL) {
 
   $navi= fcp_write_navigation(8, $dom);
   $soc_med = fcp_write_socmed();
-  $img = fcp_get_image( $content, $next_issue_url );
+  $img = fcp_get_image_html( $content, $next_issue_url );
 
   if( preg_match( '/DevAbode_\d+.png/', $content  ) ){
     return '' . $img . $navi . $soc_med ;
@@ -111,7 +111,7 @@ function fcp_write_socmed (){
 END;
 }
 
-function fcp_get_image( $content, $url ){
+function fcp_get_image_html( $content, $url ){
   $image_pattern = '/(<img[^>]+>)/';
   preg_match( $image_pattern, $content, $match );
   return '<p><a href="' . $url . '" rel="next">' . $match[0] . '</a></p>';
