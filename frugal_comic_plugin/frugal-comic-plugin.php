@@ -130,7 +130,8 @@ function fcp_get_link_tags( $post ){
     return $tags;
 };
 
-function fcp_og_meta ( $post ){
+function fcp_add_og_meta ( $post ){
+
   $comic_image_url = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
   $this_title = get_the_title( $post );
   $this_url   = get_permalink($post);
@@ -140,7 +141,7 @@ function fcp_og_meta ( $post ){
   $tags .= '<meta property="og:url" content="' . $this_url . '">' . "\n";
   $tags .= '<meta property="og:type" content="website">' . "\n";
 
-  return $tags;
+  return '';
 }
 
 function fcp_modify_content( $content ){
@@ -286,3 +287,4 @@ function fcp_save_postdata( $post_id ) {
   }
 }
 ?>
+
