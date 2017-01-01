@@ -278,4 +278,3 @@ function fcp_save_postdata( $post_id ) {
   }
 }
 ?>
-
