@@ -68,8 +68,6 @@ function fcp_plugin_options() {
     echo $html;
 }
 
-
-
 /* Adds a meta box to the post edit screen */
 function fcp_add_custom_box() {
     $screens = array( 'post', 'my_cpt' );
@@ -85,12 +83,12 @@ function fcp_add_custom_box() {
 
 function fcp_add_html_header_elements (){
   global $post;
-  $header_elements  = fcp_get_link_tags( $post );
+  $header_elements  = fcp_get_header_link_tags( $post );
   $header_elements .= fcp_add_og_meta( $post );
   echo $header_elements;
 }
 
-function fcp_get_link_tags( $post ){
+function fcp_get_header_link_tags( $post ){
 
     $start_issue_url = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
     $start_issue_title = get_the_title(get_option('fcp_post_id_of_first_issue'));
@@ -135,7 +133,7 @@ function fcp_add_og_meta ( $post ){
 
 function fcp_modify_content( $content ){
   global $post;
-  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 8 );
+
   $first_comic_url = get_post_meta( $first_issue_post_id, '_fcp_comic_image_url', true );
   $next_post = get_next_post();
   $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true ); 
@@ -144,33 +142,27 @@ function fcp_modify_content( $content ){
     return $content;
   }
 
-  $new_content = fcp_rewrite_content(
-    $content, 
-    get_post_meta( $post->ID, '_fcp_comic_image_url', true ), 
-    get_permalink($next_post->ID), 
-    $first_comic_url , 
-    $first_issue_id ,
-    get_permalink( $post->ID )
-  ); 
+  $new_content = fcp_rewrite_content( $content ); 
 
   if( empty( $next_post )){
-    $js = fcp_get_comic_preload_js($first_comic_url) ;
+    $js = fcp_get_comic_preload_js( $first_comic_url , get_post_meta( $post->ID, '_fcp_comic_image_url', true ) ) ;
     return $js . $new_content ;
   }
 
-  $js = fcp_get_comic_preload_js($next_comic_image_url ) ;
+  $js = fcp_get_comic_preload_js( $next_comic_image_url ) ;
   return $js . $new_content;
 }
 
-function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL, $first_comic_url,  $first_issue_id, $this_issue_url) {
-  $latest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
+function fcp_rewrite_content( $content ) {
+  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 8 );
+  $newest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
-  $oldest_issue_url = get_permalink( $first_issue_id );
+  $first_issue_url  = get_permalink( $first_issue_id );
   $prev_issue_url   = get_permalink( get_adjacent_post(false,'',true) )  ;
   $next_issue_url   = get_permalink( get_adjacent_post(false,'',false) ) ;
-  $newest_issue_url = get_permalink( $latest_issue_id);
+  $newest_issue_url = get_permalink( $newest_issue_id);
 
-  $navi= fcp_get_navigation( $first_issue_id, $latest_issue_id, $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url, $this_issue_url);
+  $navi= fcp_get_navigation( $first_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url );
   $img = fcp_get_image_html( $content, $next_issue_url );
   $soc_med = fcp_get_socmed();
 
@@ -186,16 +178,16 @@ function fcp_get_socmed () {
   $this_perm_urlenc = urlencode( get_permalink( $post ) );
   $this_title_urlenc = urlencode( get_the_title( $post ) );
 
-  return <<<END
-<div style="text-align:right;">
-  <div style="font-size:12px;display:inline-block;padding: 0 5px;">
-    If you like the comic it would be fantastic if you could 
-    <a href="https://www.facebook.com/sharer/sharer.php?u=${this_perm_urlenc}" target="_blank" style="font-size:12px;display:inline-block;background-color:#3B5998;color:#FFFFFF;padding:0 5px;">post it on Facebook</a>
-    <a href="https://twitter.com/intent/tweet?text=${this_title_urlenc}&url=${this_perm_urlenc}&related=twitterapi%2Ctwitter" target="_blank" style="font-size:12px;display:inline-block;background-color:#2FC2EF;color:#FFFFFF;padding:0 5px;">or tweet about it</a>
-    <div style="font-size:12px;display:inline-block;padding: 0 5px;"> Thanks! :)</div>
-  </div>
-</div>
-END;
+  $html  = '<div style="text-align:right;">';
+  $html .= '<div style="font-size:12px;display:inline-block;padding: 0 5px;">If you like the comic it would be fantastic if you could ';
+  $html .= '<a href="https://www.facebook.com/sharer/sharer.php?u=' .$this_perm_urlenc ;
+  $html .= '" target="_blank" style="font-size:12px;display:inline-block;background-color:#3B5998;color:#FFFFFF;padding:0 5px;">post it on Facebook</a>'
+  $html .= '<a href="https://twitter.com/intent/tweet?text=' . $this_title_urlenc .'&url=' .$this_perm_urlenc ;
+  $html .= '&related=twitterapi%2Ctwitter" target="_blank" style="font-size:12px;display:inline-block;background-color:#2FC2EF;color:#FFFFFF;padding:0 5px;">';
+  $html .= 'or tweet about it</a>';
+  $html .= '<div style="font-size:12px;display:inline-block;padding: 0 5px;"> Thanks! :)</div></div></div>';
+
+  return $html;
 }
 
 function fcp_get_image_html( $content, $url ){
@@ -213,15 +205,17 @@ function fcp_get_comic_preload_js($next_img_url ) {
   return $js;
 }
 
-function fcp_get_navigation ( $first_issue_id, $latest_issue_id , $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url, $this_issue_url){
+function fcp_get_navigation ( $first_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url ){
+  global $post;
+  $this_issue_url = get_permalink( $post->ID ) ;
+  $is_first_post =  $this_issue_url === $first_issue_url ;
   $is_newest_post = $this_issue_url === $newest_issue_url ; 
-  $is_first_post =  $this_issue_url === $oldest_issue_url ;
 
   $html = '<div id="stripnav" style="width: 100%;text-align:right; margin-bottom:80px;"><ul>';
   $html .= fcp_add_navi_li( ! $is_newest_post, $newest_issue_url,  "newest &gt;&gt;");
   $html .= fcp_add_navi_li( ! $is_newest_post, $next_issue_url,   "next&gt;");
   $html .= fcp_add_navi_li( ! $is_first_post,  $prev_issue_url,   "&lt; previous");
-  $html .= fcp_add_navi_li( ! $is_first_post,  $oldest_issue_url, "&lt;&lt; first");
+  $html .= fcp_add_navi_li( ! $is_first_post,  $first_issue_url, "&lt;&lt; first");
   $html .= '</div>';
   
   return $html;
