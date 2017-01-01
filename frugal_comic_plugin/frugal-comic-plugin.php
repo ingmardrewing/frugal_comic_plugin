@@ -181,7 +181,7 @@ function fcp_get_socmed () {
   $html  = '<div style="text-align:right;">';
   $html .= '<div style="font-size:12px;display:inline-block;padding: 0 5px;">If you like the comic it would be fantastic if you could ';
   $html .= '<a href="https://www.facebook.com/sharer/sharer.php?u=' .$this_perm_urlenc ;
-  $html .= '" target="_blank" style="font-size:12px;display:inline-block;background-color:#3B5998;color:#FFFFFF;padding:0 5px;">post it on Facebook</a>'
+  $html .= '" target="_blank" style="font-size:12px;display:inline-block;background-color:#3B5998;color:#FFFFFF;padding:0 5px;">post it on Facebook</a>';
   $html .= '<a href="https://twitter.com/intent/tweet?text=' . $this_title_urlenc .'&url=' .$this_perm_urlenc ;
   $html .= '&related=twitterapi%2Ctwitter" target="_blank" style="font-size:12px;display:inline-block;background-color:#2FC2EF;color:#FFFFFF;padding:0 5px;">';
   $html .= 'or tweet about it</a>';
