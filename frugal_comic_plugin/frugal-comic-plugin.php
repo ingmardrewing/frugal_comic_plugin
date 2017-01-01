@@ -154,7 +154,13 @@ function fcp_modify_content( $content ){
     return $content;
   }
 
-  $new_content = fcp_rewrite_content($content, get_post_meta( $post->ID, '_fcp_comic_image_url', true ), get_permalink($next_post->ID), $first_comic_url , $first_issue_id) ; 
+  $new_content = fcp_rewrite_content(
+    $content, 
+    get_post_meta( $post->ID, '_fcp_comic_image_url', true ), 
+    get_permalink($next_post->ID), 
+    $first_comic_url , 
+    $first_issue_id
+  ); 
 
   if( empty( $next_post )){
     $js = fcp_get_comic_preload_js($first_comic_url) ;
@@ -165,7 +171,7 @@ function fcp_modify_content( $content ){
   return $js . $new_content;
 }
 
-function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL, $first_comic_url, $first_comic_url, $first_issue_id) {
+function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL, $first_comic_url,  $first_issue_id) {
   $latest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
   $oldest_issue_url = 'http://devabo.de/2013/08/01/a-step-in-the-dark/' ;
