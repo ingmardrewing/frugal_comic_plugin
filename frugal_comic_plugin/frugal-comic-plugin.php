@@ -3,11 +3,84 @@
 Plugin Name: FrugalComicPlugin
 */
 
+add_action( 'admin_menu', 'fcp_plugin_menu' );
 add_action( 'add_meta_boxes', 'fcp_add_custom_box' );
 add_action( 'save_post', 'fcp_save_postdata' );
 
 add_action( 'wp_head', 'fcp_add_html_header_elements');
 add_filter( 'the_content', 'fcp_modify_content');
+
+
+/** Step 1. */
+function fcp_plugin_menu() {
+	add_options_page( 'Frugal Comic Plugin Options', 'Frugal Comic Plugin', 'manage_options', 'fcp-admin-menu', 'fcp_plugin_options' );
+}
+
+function fcp_plugin_options() {
+
+    //must check that the user has the required capability 
+    if (!current_user_can('manage_options'))
+    {
+      wp_die( __('You do not have sufficient permissions to access this page.') );
+    }
+
+    // variables for the field and option names 
+    $opt_name = 'fcp_post_id_of_first_issue';
+
+    $hidden_field_name = 'fcp_submit_hidden';
+    $data_field_name = 'fcp_post_id_of_first_issue';
+
+    // Read in existing option value from database
+    $opt_val = get_option( $opt_name );
+
+    // See if the user has posted us some information
+    // If they did, this hidden field will be set to 'Y'
+    if( isset($_POST[ $hidden_field_name ]) && $_POST[ $hidden_field_name ] == 'Y' ) {
+        // Read their posted value
+        $opt_val = $_POST[ $data_field_name ];
+
+        // Save the posted value in the database
+        update_option( $opt_name, $opt_val );
+
+        // Put a "settings saved" message on the screen
+
+?>
+<div class="updated"><p><strong><?php _e('settings saved.', 'menu-test' ); ?></strong></p></div>
+<?php
+
+    }
+
+    // Now display the settings editing screen
+
+    echo '<div class="wrap">';
+
+    // header
+
+    echo "<h2>" . __( 'Menu Test Plugin Settings', 'menu-test' ) . "</h2>";
+
+    // settings form
+    
+    ?>
+
+<form name="form1" method="post" action="">
+<input type="hidden" name="<?php echo $hidden_field_name; ?>" value="Y">
+
+<p><?php _e("Post-ID of first issue:", 'menu-test' ); ?> 
+<input type="text" name="<?php echo $data_field_name; ?>" value="<?php echo $opt_val; ?>" size="20">
+</p><hr />
+
+<p class="submit">
+<input type="submit" name="Submit" class="button-primary" value="<?php esc_attr_e('Save Changes') ?>" />
+</p>
+
+</form>
+</div>
+
+<?php
+ 
+}
+
+
 
 /* Adds a meta box to the post edit screen */
 function fcp_add_custom_box() {
@@ -24,7 +97,7 @@ function fcp_add_custom_box() {
 
 function fcp_add_html_header_elements (){
   global $post;
-  $header_elements  = fcp_get_link_tags( $post )
+  $header_elements  = fcp_get_link_tags( $post );
   $header_elements .= fcp_add_og_meta( $post );
   echo $header_elements;
 }
@@ -72,7 +145,8 @@ function fcp_og_meta ( $post ){
 
 function fcp_modify_content( $content ){
   global $post;
-  $first_comic_url = "https://s3-us-west-1.amazonaws.com/devabode-us/comicstrips/DevAbode_0001.png"; 
+  $first_issue_id = get_option( 'fcp_post_id_of_first_issue' );
+  $first_comic_url = get_post_meta( $first_issue_post_id, '_fcp_comic_image_url', true );
   $next_post = get_next_post();
   $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true ); 
 
@@ -80,27 +154,26 @@ function fcp_modify_content( $content ){
     return $content;
   }
 
-  $new_content = fcp_rewrite_content($content, get_post_meta( $post->ID, '_fcp_comic_image_url', true ), get_permalink($next_post->ID) ) ; 
+  $new_content = fcp_rewrite_content($content, get_post_meta( $post->ID, '_fcp_comic_image_url', true ), get_permalink($next_post->ID), $first_comic_url , $first_issue_id) ; 
 
   if( empty( $next_post )){
     $js = fcp_get_comic_preload_js($first_comic_url) ;
-    return $js . $new_content
+    return $js . $new_content ;
   }
 
   $js = fcp_get_comic_preload_js($next_comic_image_url ) ;
   return $js . $new_content;
 }
 
-function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL) {
+function fcp_rewrite_content($content, $this_img_url, $next_permalink = NULL, $first_comic_url, $first_comic_url, $first_issue_id) {
   $latest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
-  $first_issue_id = 8;
 
   $oldest_issue_url = 'http://devabo.de/2013/08/01/a-step-in-the-dark/' ;
   $prev_issue_url   = get_permalink(get_adjacent_post(false,'',true))  ;
   $next_issue_url   = get_permalink(get_adjacent_post(false,'',false)) ;
   $newest_issue_url =  get_permalink( $latest_issue_id);
 
-  $navi= fcp_get_navigation( $first_issue_id, $latest_issue_id $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url);
+  $navi= fcp_get_navigation( $first_issue_id, $latest_issue_id, $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url);
   $img = fcp_get_image_html( $content, $next_issue_url );
   $soc_med = fcp_get_socmed();
 
@@ -144,7 +217,7 @@ function fcp_get_comic_preload_js($next_img_url ) {
 }
 
 function fcp_get_navigation ( $first_issue_id, $latest_issue_id , $oldest_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url){
-  $is_newest_post =  get_the_ID() < $first_issue_id ) && ( $latest_cpt[0]['ID'] != get_the_ID() ;
+  $is_newest_post =  (get_the_ID() < $first_issue_id ) && ( $latest_cpt[0]['ID'] != get_the_ID() );
   $is_first_post =  get_the_ID() < $first_issue_id + 1 ;
 
   $html = '<div id="stripnav" style="width: 100%;text-align:right; margin-bottom:80px;"><ul>';
