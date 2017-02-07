@@ -24,12 +24,15 @@ function fcp_plugin_options() {
 
     // variables for the field and option names 
     $opt_name = 'fcp_post_id_of_first_issue';
+    $opt2_name = 'fcp_file_name_pattern';
 
     $hidden_field_name = 'fcp_submit_hidden';
     $data_field_name = 'fcp_post_id_of_first_issue';
+    $data2_field_name = 'fcp_file_name_pattern';
 
     // Read in existing option value from database
     $opt_val = get_option( $opt_name );
+    $opt2_val = get_option( $opt2_name );
 
     // output
     $html = '';
@@ -40,9 +43,11 @@ function fcp_plugin_options() {
     if( isset($_POST[ $hidden_field_name ]) && $_POST[ $hidden_field_name ] == 'Y' ) {
         // Read their posted value
         $opt_val = $_POST[ $data_field_name ];
+        $opt2_val = $_POST[ $data2_field_name ];
 
         // Save the posted value in the database
         update_option( $opt_name, $opt_val );
+        update_option( $opt2_name, $opt2_val );
 
         // Put a "settings saved" message on the screen
         $msg = __('settings saved.', 'fcp-admin-menu' );
@@ -61,6 +66,10 @@ function fcp_plugin_options() {
     $html .= '<p><label for="'.$data_field_name.'">' . __("Post-ID of first issue:", 'fcp-admin-menu' ) . '</label>' ;
     $html .= '<input type="text" name="' . $data_field_name . '" value="'. $opt_val .'" size="20">';
     $html .= '</p><hr />';
+    $html .= '<p><label for="'.$data2_field_name.'">' . __("Image file name pattern:", 'fcp-admin-menu' ) . '</label>' ;
+    $html .= '<input type="text" name="' . $data2_field_name . '" value="'. $opt2_val .'" size="20">';
+    $html .= '</p><hr />';
+
     $html .= '<p class="submit">';
     $html .= '<input type="submit" name="Submit" class="button-primary" value="' . esc_attr(__('Save Changes')) .'" />';
     $html .= '</p></form></div>';
@@ -154,7 +163,8 @@ function fcp_modify_content( $content ){
 }
 
 function fcp_rewrite_content( $content ) {
-  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 8 );
+  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 1 );
+  $file_name_pattern = get_option( 'fcp_file_name_pattern', 'DevAbode_\d+.png' );
   $newest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
   $first_issue_url  = get_permalink( $first_issue_id );
@@ -164,12 +174,12 @@ function fcp_rewrite_content( $content ) {
 
   $navi= fcp_get_navigation( $first_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url );
   $img = fcp_get_image_html( $content, $next_issue_url );
-  $soc_med = fcp_get_socmed();
+  $soc_med = ''; # fcp_get_socmed();
 
-  if( preg_match( '/DevAbode_\d+.png/', $content  ) ){
+  if( preg_match( '/' . $file_name_pattern . '/', $content  ) ){
     return $img . $navi . $soc_med ;
   }
-  return $content ;
+  return $content  ;
 }
 
 function fcp_get_socmed () {
