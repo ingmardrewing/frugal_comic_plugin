@@ -203,7 +203,7 @@ function fcp_get_socmed () {
 function fcp_get_image_html( $content, $url ){
   $image_pattern = '/(<img[^>]+>)/';
   preg_match( $image_pattern, $content, $match );
-  return '<p><a href="' . $url . '" rel="next">' . $match[0] . '</a></p>';
+  return '<p><a href="' . fcp_add_entry($url) . '" rel="next">' . $match[0] . '</a></p>';
 }
 
 function fcp_get_comic_preload_js($next_img_url ) {
@@ -222,14 +222,22 @@ function fcp_get_navigation ( $first_issue_url, $prev_issue_url, $next_issue_url
   $is_newest_post = $this_issue_url === $newest_issue_url ; 
 
   $html = '<div id="stripnav" style="width: 100%;text-align:right; margin-bottom:80px;"><ul>';
-  $html .= fcp_add_navi_li( ! $is_newest_post, $newest_issue_url,  "newest &gt;&gt;");
-  $html .= fcp_add_navi_li( ! $is_newest_post, $next_issue_url,   "next&gt;");
-  $html .= fcp_add_navi_li( ! $is_first_post,  $prev_issue_url,   "&lt; previous");
-  $html .= fcp_add_navi_li( ! $is_first_post,  $first_issue_url, "&lt;&lt; first");
+  $html .= fcp_add_navi_li( ! $is_newest_post, fcp_add_entry($newest_issue_url),  "newest &gt;&gt;");
+  $html .= fcp_add_navi_li( ! $is_newest_post, fcp_add_entry($next_issue_url),   "next&gt;");
+  $html .= fcp_add_navi_li( ! $is_first_post,  fcp_add_entry($prev_issue_url),   "&lt; previous");
+  $html .= fcp_add_navi_li( ! $is_first_post,  fcp_add_entry($first_issue_url), "&lt;&lt; first");
   $html .= '</div>';
-  
   return $html;
 }
+
+function fcp_add_entry ( $url ){
+  if( $_GET['_s'] ){
+    return $url . '?_s=' . $_GET['_s'];
+  }
+  global $post;
+  return $url . '?_s=' . $post->ID;
+}
+
 
 function fcp_add_navi_li ( $add_navi_link, $url, $label ){
   $html = '<li style="list-style-type:none;float:right;margin-right:10px;">';
