@@ -235,9 +235,11 @@ function fcp_link_page_js($url) {
 }
 
 function fcp_inner_custom_box( $post ) {
-  $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true ) || ''; 
+  $id = $post->ID;
+  $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
+  $value = $value ? $value : '';
   
-  $html  = '<label for="fcp_field">Comic Image URI </label>';
+  $html  = '<label for="fcp_field">Comic Image URI for Post ID ' . $id . '</label> ';
   $html .= '<input name="fcp_field" id="fcp_field" class="postbox" value="'. $value .'" style="width:100%;" />';
 
   echo $html;
