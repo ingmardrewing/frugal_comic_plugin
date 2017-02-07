@@ -63,10 +63,10 @@ function fcp_plugin_options() {
     // settings form
     $html .= '<form name="form1" method="post" action="">';
     $html .= '<input type="hidden" name="' . $hidden_field_name . '" value="Y">';
-    $html .= '<p><label for="'.$data_field_name.'">' . __("Post-ID of first issue:", 'fcp-admin-menu' ) . '</label>' ;
+    $html .= '<p><label for="'.$data_field_name.'">' . __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ) . '</label>' ;
     $html .= '<input type="text" name="' . $data_field_name . '" value="'. $opt_val .'" size="20">';
     $html .= '</p><hr />';
-    $html .= '<p><label for="'.$data2_field_name.'">' . __("Image file name pattern:", 'fcp-admin-menu' ) . '</label>' ;
+    $html .= '<p><label for="'.$data2_field_name.'">' . __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ) . '</label>' ;
     $html .= '<input type="text" name="' . $data2_field_name . '" value="'. $opt2_val .'" size="20">';
     $html .= '</p><hr />';
 
@@ -163,7 +163,7 @@ function fcp_modify_content( $content ){
 }
 
 function fcp_rewrite_content( $content ) {
-  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 1 );
+  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 8 );
   $file_name_pattern = get_option( 'fcp_file_name_pattern', 'DevAbode_\d+.png' );
   $newest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
