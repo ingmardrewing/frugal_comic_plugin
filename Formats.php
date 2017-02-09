@@ -31,8 +31,23 @@ PRELOAD;
   public static function get_inner_custom_box_format(){
     return <<<'INNER_CUSTOM_BOX'
 <label for="fcp_field">Comic Image URI for Post ID %s</label>
-<input name="fcp_field" id="fcp_field" class="postbox" value="%s" style="width:100%;" />
+<input name="fcp_field" id="fcp_field" class="postbox" value="%s" style="width:100%%;" />
 INNER_CUSTOM_BOX;
+  }
+
+  public static function get_next_and_prefetch_headerlinks(){
+    return <<<'HEADERLINKS2'
+<link ref="next" title="%s" href="%s" />
+<link ref="prefetch" title="%s" href="%s" />
+HEADERLINKS2;
+  }
+
+  public static function get_headerlinks(){
+    return <<<'HEADERLINKS'
+<link ref="start" title="%s" href="%s" />
+<link ref="prev" title="%s" href="%s" />
+%s
+HEADERLINKS;
   }
 
   public static function get_settings_editing_html(){

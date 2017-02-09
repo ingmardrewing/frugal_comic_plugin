@@ -94,41 +94,43 @@ function fcp_add_html_header_elements (){
 }
 
 function fcp_get_header_link_tags( $post ){
-  $start_url = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
-  $start_title = get_the_title(get_option('fcp_post_id_of_first_issue'));
-
-  $start_link = '<link ref="start" title="' . $start_title . '" href="'. $start_url .'" />';
+  $start_url
+    = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
+  $start_title
+    = get_the_title(get_option('fcp_post_id_of_first_issue'));
 
   $prev_url = get_permalink(get_adjacent_post(false,'',true))  ;
   $pref_title = get_the_title(get_adjacent_post(false,'',true));
-
-  $prev_link = '<link ref="prev" title="'. $prev_title .'" href="'. $prev_url .'" />';
-
   $next_url = get_permalink(get_adjacent_post(false,'',false));
   $this_url = get_permalink($post);
 
-  $tags = $start_link . "\n";
-  $tags .= $prev_link . "\n";
-
+  $next_line = '';
   if( $next_url != $this_url ){
     $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
     $title = get_the_title(get_adjacent_post(false,'',false));
-    $next_link = '<link ref="next" title="'. $title .'" href="'. $next_issue_url .'" />';
-    $prefetch_link = '<link ref="prefetch" title="'. $title .'" href="'. $next_issue_url .'" />';
-
-    $tags .= $next_link . "\n";
-    $tags .= $prefetch_link . "\n";
+    $pref_format = Formats::get_next_and_prefetch_headerlinks();
+    $next_line = sprintf( $pref_format,
+      $title, $next_issue_url, $title , $next_issue_url );
   }
 
+  $headerlink_format = Formats::get_headerlinks();
+  return sprintf( $headerlink_format,
+                    $start_title,
+                    $start_url,
+                    $prev_title,
+                    $prev_url,
+                    $next_line
+  );
   return $tags ;
 };
 
 function fcp_modify_content( $content ){
-  global $post;
-
-  $first_comic_url = get_post_meta( $first_issue_post_id, '_fcp_comic_image_url', true );
+  $first_id = get_option('fcp_post_id_of_first_issue')  ;
+  $first_comic_url
+    = get_post_meta( $first_id, '_fcp_comic_image_url', true );
   $next_post = get_next_post();
-  $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true );
+  $next_comic_image_url
+    = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true );
 
   if( ! empty( $next_post ) && empty( $next_comic_image_url ) ){
     return $content;
