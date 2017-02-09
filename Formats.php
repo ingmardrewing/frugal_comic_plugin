@@ -37,6 +37,7 @@ INNER_CUSTOM_BOX;
 
   public static function get_settings_editing_html(){
     return <<<'SETTINGS_EDITING'
+%s
 <div class="wrap">
   <h2>%s</h2>
   <form name="form1" method="post" action="">
@@ -57,6 +58,10 @@ INNER_CUSTOM_BOX;
   </form>
 </div>
 SETTINGS_EDITING;
+  }
+
+  public static function get_setting_saved_format(){
+    return '<div class="updated"><p><strong>%s</strong></p></div>';
   }
 
 }

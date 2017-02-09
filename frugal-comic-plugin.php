@@ -18,58 +18,61 @@ function fcp_plugin_menu() {
 
 function fcp_plugin_options() {
 
-    //must check that the user has the required capability 
-    if (!current_user_can('manage_options')) {
-      wp_die( __('You do not have sufficient permissions to access this page.') );
-    }
+  //must check that the user has the required capability
+  if (!current_user_can('manage_options')) {
+    wp_die( __('You do not have sufficient permissions to access this page.') );
+  }
 
-    // variables for the field and option names 
-    $opt_name = 'fcp_post_id_of_first_issue';
-    $opt2_name = 'fcp_file_name_pattern';
+  // variables for the field and option names
+  $opt_name = 'fcp_post_id_of_first_issue';
+  $opt2_name = 'fcp_file_name_pattern';
 
-    $hidden_field_name = 'fcp_submit_hidden';
-    $data_field_name = 'fcp_post_id_of_first_issue';
-    $data2_field_name = 'fcp_file_name_pattern';
+  $hidden_field_name = 'fcp_submit_hidden';
+  $data_field_name = 'fcp_post_id_of_first_issue';
+  $data2_field_name = 'fcp_file_name_pattern';
 
-    // Read in existing option value from database
-    $opt_val = get_option( $opt_name );
-    $opt2_val = get_option( $opt2_name );
+  // Read in existing option value from database
+  $opt_val = get_option( $opt_name );
+  $opt2_val = get_option( $opt2_name );
 
-    // output
-    $html = '';
+  // output
 
-    // See if the user has posted us some information
-    // If they did, this hidden field will be set to 'Y'
+  // See if the user has posted us some information
+  // If they did, this hidden field will be set to 'Y'
 
-    if( isset($_POST[ $hidden_field_name ]) && $_POST[ $hidden_field_name ] == 'Y' ) {
-        // Read their posted value
-        $opt_val = $_POST[ $data_field_name ];
-        $opt2_val = $_POST[ $data2_field_name ];
+  $settings_saved = '';
+  if( isset($_POST[ $hidden_field_name ]) && $_POST[ $hidden_field_name ] == 'Y' ) {
+    // Read their posted value
+    $opt_val = $_POST[ $data_field_name ];
+    $opt2_val = $_POST[ $data2_field_name ];
 
-        // Save the posted value in the database
-        update_option( $opt_name, $opt_val );
-        update_option( $opt2_name, $opt2_val );
+    // Save the posted value in the database
+    update_option( $opt_name, $opt_val );
+    update_option( $opt2_name, $opt2_val );
 
-        // Put a "settings saved" message on the screen
-        $msg = __('settings saved.', 'fcp-admin-menu' );
-        $html .= '<div class="updated"><p><strong>' . $msg . '</strong></p></div>';
-    }
+    // Put a "settings saved" message on the screen
+    $msg = __('settings saved.', 'fcp-admin-menu' );
+    $sformat = Formats::get_settings_editing_html();
+    $settings_saved = sprintf( $sformat, $msg );
+  }
 
-    $format = Formats::get_settings_editing_html();
-    // Now display the settings editing screen
-    echo sprintf( $format, 
-       __( 'Frugal Comic Pugin Settings', 'fcp-admin-menu' ),
-      $hidden_field_name ,
-      $data_field_name,
-      __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ),
-      $data_field_name ,
-      $opt_val ,
-      $data2_field_name,
-      __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ),
-      $data2_field_name ,
-      $opt2_val ,
-      esc_attr(__('Save Changes'))
-    );
+  $format = Formats::get_settings_editing_html();
+
+  // Now display the settings editing screen
+  echo sprintf( $format,
+    $settings_saved,
+    __( 'Frugal Comic Pugin Settings', 'fcp-admin-menu' ),
+    $hidden_field_name ,
+    $data_field_name,
+    __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ),
+    $data_field_name ,
+    $opt_val ,
+    $data2_field_name,
+    __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ),
+    $data2_field_name ,
+    $opt2_val ,
+    esc_attr(__('Save Changes'))
+  );
 }
 
 /* Adds a meta box to the post edit screen */
@@ -91,32 +94,33 @@ function fcp_add_html_header_elements (){
 }
 
 function fcp_get_header_link_tags( $post ){
+  $start_url = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
+  $start_title = get_the_title(get_option('fcp_post_id_of_first_issue'));
 
-    $start_issue_url = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
-    $start_issue_title = get_the_title(get_option('fcp_post_id_of_first_issue'));
-    $start_link = '<link ref="start" title="' . $start_issue_title . '" href="'. $start_issue_url .'" />';
+  $start_link = '<link ref="start" title="' . $start_title . '" href="'. $start_url .'" />';
 
-    $prev_issue_url = get_permalink(get_adjacent_post(false,'',true))  ;
-    $title2 = get_the_title(get_adjacent_post(false,'',true));
-    $prev_link = '<link ref="prev" title="'. $title2 .'" href="'. $prev_issue_url .'" />';
+  $prev_url = get_permalink(get_adjacent_post(false,'',true))  ;
+  $pref_title = get_the_title(get_adjacent_post(false,'',true));
 
-    $next_url = get_permalink(get_adjacent_post(false,'',false));
-    $this_url = get_permalink($post);
+  $prev_link = '<link ref="prev" title="'. $prev_title .'" href="'. $prev_url .'" />';
 
-    $tags = $start_link . "\n";
-    $tags .= $prev_link . "\n";
+  $next_url = get_permalink(get_adjacent_post(false,'',false));
+  $this_url = get_permalink($post);
 
-    if( $next_url != $this_url ){
-      $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
-      $title = get_the_title(get_adjacent_post(false,'',false));
-      $next_link = '<link ref="next" title="'. $title .'" href="'. $next_issue_url .'" />';
-      $prefetch_link = '<link ref="prefetch" title="'. $title .'" href="'. $next_issue_url .'" />';
+  $tags = $start_link . "\n";
+  $tags .= $prev_link . "\n";
 
-      $tags .= $next_link . "\n";
-      $tags .= $prefetch_link . "\n";
-    }
+  if( $next_url != $this_url ){
+    $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
+    $title = get_the_title(get_adjacent_post(false,'',false));
+    $next_link = '<link ref="next" title="'. $title .'" href="'. $next_issue_url .'" />';
+    $prefetch_link = '<link ref="prefetch" title="'. $title .'" href="'. $next_issue_url .'" />';
 
-    return $tags ;
+    $tags .= $next_link . "\n";
+    $tags .= $prefetch_link . "\n";
+  }
+
+  return $tags ;
 };
 
 function fcp_modify_content( $content ){
@@ -124,13 +128,13 @@ function fcp_modify_content( $content ){
 
   $first_comic_url = get_post_meta( $first_issue_post_id, '_fcp_comic_image_url', true );
   $next_post = get_next_post();
-  $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true ); 
+  $next_comic_image_url = get_post_meta( $next_post->ID, '_fcp_comic_image_url', true );
 
   if( ! empty( $next_post ) && empty( $next_comic_image_url ) ){
     return $content;
   }
 
-  $new_content = fcp_rewrite_content( $content ); 
+  $new_content = fcp_rewrite_content( $content );
 
   if( empty( $next_post )){
     $js = fcp_get_comic_preload_js( $first_comic_url , get_post_meta( $post->ID, '_fcp_comic_image_url', true ) ) ;
@@ -182,13 +186,13 @@ function fcp_get_comic_preload_js($next_img_url ) {
 
 function fcp_get_navigation ( $this_url, $first_url, $prev_url, $next_url, $newest_url ){
   $is_first=  $this_url === $first_url ;
-  $is_newest = $this_url === $newest_url ; 
+  $is_newest = $this_url === $newest_url ;
   $format = Formats::get_navi_format();
   $lnwst = "newest &gt;&gt;";
   $lnxt = "next&gt;";
   $lprv = "&lt; previous";
   $lfrst = "&lt;&lt; first";
-  return sprintf( $format, 
+  return sprintf( $format,
    fcp_add_navi_li( ! $is_newest, add_get_p($newest_url), $lnwst),
    fcp_add_navi_li( ! $is_newest, add_get_p($next_url), $lnxt),
    fcp_add_navi_li( ! $is_first,  add_get_p($prev_url), $lprv),
@@ -216,7 +220,7 @@ function fcp_add_navi_li ( $add_navi_link, $url, $label ){
 
 function fcp_inner_custom_box( $post ) {
   $id = $post->ID;
-  $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
+  $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true );
   $value = $value ? $value : '';
   $format = Formats::get_inner_custom_box_format();
   echo sprintf( $format, $id, $value );
