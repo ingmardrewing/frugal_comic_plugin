@@ -2,6 +2,7 @@
 /*
 Plugin Name: Frugal Comic Plugin
 */
+include 'Formats.php';
 
 add_action( 'admin_menu', 'fcp_plugin_menu' );
 add_action( 'add_meta_boxes', 'fcp_add_custom_box' );
@@ -54,27 +55,21 @@ function fcp_plugin_options() {
         $html .= '<div class="updated"><p><strong>' . $msg . '</strong></p></div>';
     }
 
+    $format = Formats::get_settings_editing_html();
     // Now display the settings editing screen
-    $html .= '<div class="wrap">';
-
-    // header
-    $html .= "<h2>" . __( 'Frugal Comic Pugin Settings', 'fcp-admin-menu' ) . "</h2>";
-
-    // settings form
-    $html .= '<form name="form1" method="post" action="">';
-    $html .= '<input type="hidden" name="' . $hidden_field_name . '" value="Y">';
-    $html .= '<p><label for="'.$data_field_name.'">' . __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ) . '</label>' ;
-    $html .= '<input type="text" name="' . $data_field_name . '" value="'. $opt_val .'" size="20">';
-    $html .= '</p><hr />';
-    $html .= '<p><label for="'.$data2_field_name.'">' . __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ) . '</label>' ;
-    $html .= '<input type="text" name="' . $data2_field_name . '" value="'. $opt2_val .'" size="20">';
-    $html .= '</p><hr />';
-
-    $html .= '<p class="submit">';
-    $html .= '<input type="submit" name="Submit" class="button-primary" value="' . esc_attr(__('Save Changes')) .'" />';
-    $html .= '</p></form></div>';
-
-    echo $html;
+    echo sprintf( $format, 
+       __( 'Frugal Comic Pugin Settings', 'fcp-admin-menu' ),
+      $hidden_field_name ,
+      $data_field_name,
+      __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ),
+      $data_field_name ,
+      $opt_val ,
+      $data2_field_name,
+      __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ),
+      $data2_field_name ,
+      $opt2_val ,
+      esc_attr(__('Save Changes'))
+    );
 }
 
 /* Adds a meta box to the post edit screen */
@@ -92,9 +87,7 @@ function fcp_add_custom_box() {
 
 function fcp_add_html_header_elements (){
   global $post;
-  $header_elements  = fcp_get_header_link_tags( $post );
-  $header_elements .= fcp_add_og_meta( $post );
-  echo $header_elements;
+  echo fcp_get_header_link_tags( $post );
 }
 
 function fcp_get_header_link_tags( $post ){
@@ -126,20 +119,6 @@ function fcp_get_header_link_tags( $post ){
     return $tags ;
 };
 
-function fcp_add_og_meta ( $post ){
-
-  $comic_image_url = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
-  $this_title = get_the_title( $post );
-  $this_url   = get_permalink($post);
-
-  $tags  = '<meta property="og:image" content="' . $comic_image_url . '">' . "\n";
-  $tags .= '<meta property="og:title" content="' . $this_title . '">' . "\n";
-  $tags .= '<meta property="og:url" content="' . $this_url . '">' . "\n";
-  $tags .= '<meta property="og:type" content="website">' . "\n";
-
-  return '';
-}
-
 function fcp_modify_content( $content ){
   global $post;
 
@@ -163,74 +142,61 @@ function fcp_modify_content( $content ){
 }
 
 function fcp_rewrite_content( $content ) {
-  $first_issue_id = get_option( 'fcp_post_id_of_first_issue', 8 );
+  $first_id = get_option( 'fcp_post_id_of_first_issue', 8 );
   $file_name_pattern = get_option( 'fcp_file_name_pattern', 'DevAbode_\d+.png' );
-  $newest_issue_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
+  $newest_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
-  $first_issue_url  = get_permalink( $first_issue_id );
-  $prev_issue_url   = get_permalink( get_adjacent_post(false,'',true) )  ;
-  $next_issue_url   = get_permalink( get_adjacent_post(false,'',false) ) ;
-  $newest_issue_url = get_permalink( $newest_issue_id);
+  $first_url  = get_permalink( $first_id );
+  $prev_url   = get_permalink( get_adjacent_post(false,'',true) )  ;
+  $next_url   = get_permalink( get_adjacent_post(false,'',false) ) ;
+  $newest_url = get_permalink( $newest_id);
 
-  $navi= fcp_get_navigation( $first_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url );
-  $img = fcp_get_image_html( $content, $next_issue_url );
-  $soc_med = ''; # fcp_get_socmed();
+  global $post;
+  $this_url = get_permalink( $post->ID ) ;
+  $navi= fcp_get_navigation( $this_url, $first_url, $prev_url, $next_url, $newest_url );
+  $img = fcp_get_image_html( $content, $next_url );
 
   if( preg_match( '/' . $file_name_pattern . '/', $content  ) ){
     return $img . $navi . $soc_med ;
   }
-  return $content  ;
-}
-
-function fcp_get_socmed () {
-  global $post;
-  $this_url = get_permalink($post);
-  $this_perm_urlenc = urlencode( get_permalink( $post ) );
-  $this_title_urlenc = urlencode( get_the_title( $post ) );
-
-  $html  = '<div style="text-align:right;">';
-  $html .= '<div style="font-size:12px;display:inline-block;padding: 0 5px;">If you like the comic it would be fantastic if you could ';
-  $html .= '<a href="https://www.facebook.com/sharer/sharer.php?u=' .$this_perm_urlenc ;
-  $html .= '" target="_blank" style="font-size:12px;display:inline-block;background-color:#3B5998;color:#FFFFFF;padding:0 5px;">post it on Facebook</a>';
-  $html .= '<a href="https://twitter.com/intent/tweet?text=' . $this_title_urlenc .'&url=' .$this_perm_urlenc ;
-  $html .= '&related=twitterapi%2Ctwitter" target="_blank" style="font-size:12px;display:inline-block;background-color:#2FC2EF;color:#FFFFFF;padding:0 5px;">';
-  $html .= 'or tweet about it</a>';
-  $html .= '<div style="font-size:12px;display:inline-block;padding: 0 5px;"> Thanks! :)</div></div></div>';
-
-  return $html;
+  return $content ;
 }
 
 function fcp_get_image_html( $content, $url ){
   $image_pattern = '/(<img[^>]+>)/';
   preg_match( $image_pattern, $content, $match );
-  return '<p><a href="' . fcp_add_entry($url) . '" rel="next">' . $match[0] . '</a></p>';
+  if( $match[0] ){
+    $format = Formats::get_comicpage_html();
+    return sprintf( $format, add_get_p($url), $match[0] );
+  }
+  return '';
 }
 
 function fcp_get_comic_preload_js($next_img_url ) {
-  $js = "<script language='javascript'>jQuery(window).load(function(){ ";
-  if( ! empty( $this_img_url ) ){
-    $js .= " var img = jQuery('<img>')[0]; img.src = \"" . $next_img_url . "\";";
+  if( ! empty( $next_img_url ) ){
+    $format = Formats::get_preload_js();
+    return sprintf( $format, $next_img_url );
   }
-  $js .= '});</script>';
-  return $js;
+  return '';
 }
 
-function fcp_get_navigation ( $first_issue_url, $prev_issue_url, $next_issue_url, $newest_issue_url ){
-  global $post;
-  $this_issue_url = get_permalink( $post->ID ) ;
-  $is_first_post =  $this_issue_url === $first_issue_url ;
-  $is_newest_post = $this_issue_url === $newest_issue_url ; 
-
-  $html = '<div id="stripnav" style="width: 100%;text-align:right; margin-bottom:80px;"><ul>';
-  $html .= fcp_add_navi_li( ! $is_newest_post, fcp_add_entry($newest_issue_url),  "newest &gt;&gt;");
-  $html .= fcp_add_navi_li( ! $is_newest_post, fcp_add_entry($next_issue_url),   "next&gt;");
-  $html .= fcp_add_navi_li( ! $is_first_post,  fcp_add_entry($prev_issue_url),   "&lt; previous");
-  $html .= fcp_add_navi_li( ! $is_first_post,  fcp_add_entry($first_issue_url), "&lt;&lt; first");
-  $html .= '</div>';
-  return $html;
+function fcp_get_navigation ( $this_url, $first_url, $prev_url, $next_url, $newest_url ){
+  $is_first=  $this_url === $first_url ;
+  $is_newest = $this_url === $newest_url ; 
+  $format = Formats::get_navi_format();
+  $lnwst = "newest &gt;&gt;";
+  $lnxt = "next&gt;";
+  $lprv = "&lt; previous";
+  $lfrst = "&lt;&lt; first";
+  return sprintf( $format, 
+   fcp_add_navi_li( ! $is_newest, add_get_p($newest_url), $lnwst),
+   fcp_add_navi_li( ! $is_newest, add_get_p($next_url), $lnxt),
+   fcp_add_navi_li( ! $is_first,  add_get_p($prev_url), $lprv),
+   fcp_add_navi_li( ! $is_first,  add_get_p($first_url), $lfrst)
+  );
 }
 
-function fcp_add_entry ( $url ){
+function add_get_p ( $url ){
   if( $_GET['_s'] ){
     return $url . '?_s=' . $_GET['_s'];
   }
@@ -238,29 +204,22 @@ function fcp_add_entry ( $url ){
   return $url . '?_s=' . $post->ID;
 }
 
-
 function fcp_add_navi_li ( $add_navi_link, $url, $label ){
-  $html = '<li style="list-style-type:none;float:right;margin-right:10px;">';
+  $outer_format = Formats::get_listelem_outer_format();
+  $inner_format = Formats::get_listelem_inner_format();
+  $inner = '';
   if( $add_navi_link ) {
-    $html .= "<a href='". $url  ."'>".$label."</a>";
+    $inner = sprintf( $inner_format, $url, $label );
   }
-  $html .= '</li>';
-  return $html;
-}
-
-function fcp_link_page_js($url) {
-  return "<script language='javascript'>jQuery(window).load(function(){ var img = jQuery('<img>')[0]; img.src = \"" . $url . "\"; console.log(img); });</script>";
+  return sprintf( $outer_format, $inner );
 }
 
 function fcp_inner_custom_box( $post ) {
   $id = $post->ID;
   $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true ); 
   $value = $value ? $value : '';
-  
-  $html  = '<label for="fcp_field">Comic Image URI for Post ID ' . $id . '</label> ';
-  $html .= '<input name="fcp_field" id="fcp_field" class="postbox" value="'. $value .'" style="width:100%;" />';
-
-  echo $html;
+  $format = Formats::get_inner_custom_box_format();
+  echo sprintf( $format, $id, $value );
 }
 
 /* save the image url of the comic page image */
