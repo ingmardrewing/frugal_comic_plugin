@@ -2,7 +2,8 @@
 /*
 Plugin Name: Frugal Comic Plugin
 */
-include 'Formats.php';
+include 'FcpFormats.php';
+include 'AdminMenu.php';
 
 add_action( 'admin_menu', 'fcp_plugin_menu' );
 add_action( 'add_meta_boxes', 'fcp_add_custom_box' );
@@ -17,62 +18,8 @@ function fcp_plugin_menu() {
 }
 
 function fcp_plugin_options() {
-
-  //must check that the user has the required capability
-  if (!current_user_can('manage_options')) {
-    wp_die( __('You do not have sufficient permissions to access this page.') );
-  }
-
-  // variables for the field and option names
-  $opt_name = 'fcp_post_id_of_first_issue';
-  $opt2_name = 'fcp_file_name_pattern';
-
-  $hidden_field_name = 'fcp_submit_hidden';
-  $data_field_name = 'fcp_post_id_of_first_issue';
-  $data2_field_name = 'fcp_file_name_pattern';
-
-  // Read in existing option value from database
-  $opt_val = get_option( $opt_name );
-  $opt2_val = get_option( $opt2_name );
-
-  // output
-
-  // See if the user has posted us some information
-  // If they did, this hidden field will be set to 'Y'
-
-  $settings_saved = '';
-  if( isset($_POST[ $hidden_field_name ]) && $_POST[ $hidden_field_name ] == 'Y' ) {
-    // Read their posted value
-    $opt_val = $_POST[ $data_field_name ];
-    $opt2_val = $_POST[ $data2_field_name ];
-
-    // Save the posted value in the database
-    update_option( $opt_name, $opt_val );
-    update_option( $opt2_name, $opt2_val );
-
-    // Put a "settings saved" message on the screen
-    $msg = __('settings saved.', 'fcp-admin-menu' );
-    $sformat = Formats::get_settings_editing_html();
-    $settings_saved = sprintf( $sformat, $msg );
-  }
-
-  $format = Formats::get_settings_editing_html();
-
-  // Now display the settings editing screen
-  echo sprintf( $format,
-    $settings_saved,
-    __( 'Frugal Comic Pugin Settings', 'fcp-admin-menu' ),
-    $hidden_field_name ,
-    $data_field_name,
-    __("Post-ID of first issue (defaults to '8'):", 'fcp-admin-menu' ),
-    $data_field_name ,
-    $opt_val ,
-    $data2_field_name,
-    __("Image file name pattern (defaults to 'DevAbode_\d+.png' ):", 'fcp-admin-menu' ),
-    $data2_field_name ,
-    $opt2_val ,
-    esc_attr(__('Save Changes'))
-  );
+  $admin_menu = new AdminMenu();
+  $admin_menu->handle_request();
 }
 
 /* Adds a meta box to the post edit screen */
@@ -108,12 +55,12 @@ function fcp_get_header_link_tags( $post ){
   if( $next_url != $this_url ){
     $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
     $title = get_the_title(get_adjacent_post(false,'',false));
-    $pref_format = Formats::get_next_and_prefetch_headerlinks();
+    $pref_format = FcpFormats::get_next_and_prefetch_headerlinks();
     $next_line = sprintf( $pref_format,
       $title, $next_issue_url, $title , $next_issue_url );
   }
 
-  $headerlink_format = Formats::get_headerlinks();
+  $headerlink_format = FcpFormats::get_headerlinks();
   return sprintf( $headerlink_format,
                     $start_title,
                     $start_url,
@@ -172,7 +119,7 @@ function fcp_get_image_html( $content, $url ){
   $image_pattern = '/(<img[^>]+>)/';
   preg_match( $image_pattern, $content, $match );
   if( $match[0] ){
-    $format = Formats::get_comicpage_html();
+    $format = FcpFormats::get_comicpage_html();
     return sprintf( $format, add_get_p($url), $match[0] );
   }
   return '';
@@ -180,7 +127,7 @@ function fcp_get_image_html( $content, $url ){
 
 function fcp_get_comic_preload_js($next_img_url ) {
   if( ! empty( $next_img_url ) ){
-    $format = Formats::get_preload_js();
+    $format = FcpFormats::get_preload_js();
     return sprintf( $format, $next_img_url );
   }
   return '';
@@ -189,7 +136,7 @@ function fcp_get_comic_preload_js($next_img_url ) {
 function fcp_get_navigation ( $this_url, $first_url, $prev_url, $next_url, $newest_url ){
   $is_first=  $this_url === $first_url ;
   $is_newest = $this_url === $newest_url ;
-  $format = Formats::get_navi_format();
+  $format = FcpFormats::get_navi_format();
   $lnwst = "newest &gt;&gt;";
   $lnxt = "next&gt;";
   $lprv = "&lt; previous";
@@ -211,8 +158,8 @@ function add_get_p ( $url ){
 }
 
 function fcp_add_navi_li ( $add_navi_link, $url, $label ){
-  $outer_format = Formats::get_listelem_outer_format();
-  $inner_format = Formats::get_listelem_inner_format();
+  $outer_format = FcpFormats::get_listelem_outer_format();
+  $inner_format = FcpFormats::get_listelem_inner_format();
   $inner = '';
   if( $add_navi_link ) {
     $inner = sprintf( $inner_format, $url, $label );
@@ -224,7 +171,7 @@ function fcp_inner_custom_box( $post ) {
   $id = $post->ID;
   $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true );
   $value = $value ? $value : '';
-  $format = Formats::get_inner_custom_box_format();
+  $format = FcpFormats::get_inner_custom_box_format();
   echo sprintf( $format, $id, $value );
 }
 
