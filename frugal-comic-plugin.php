@@ -5,6 +5,8 @@ Version: 20170211
 */
 include 'FcpFormats.php';
 include 'FcpContent.php';
+include 'FcpCustomBox.php';
+include 'FcpHead.php';
 include 'FcpAdminMenu.php';
 
 add_action( 'admin_menu', 'fcp_plugin_menu' );
@@ -31,60 +33,13 @@ function fcp_modify_content( $content ){
 
 /* Adds a meta box to the post edit screen */
 function fcp_add_custom_box() {
-    $screens = array( 'post', 'my_cpt' );
-    foreach ( $screens as $screen ) {
-        add_meta_box(
-            'fcp_box_id',            // Unique ID
-            'Frugal Comic Plugin',      // Box title
-            'fcp_inner_custom_box',  // Content callback
-             $screen                      // post type
-        );
-    }
+  $fcb = new FcpCustomBox();
+  $fcb->add_box();
 }
 
 function fcp_add_html_header_elements (){
-  global $post;
-  echo fcp_get_header_link_tags( $post );
-}
-
-function fcp_get_header_link_tags( $post ){
-  $start_url
-    = get_permalink(get_option('fcp_post_id_of_first_issue'))  ;
-  $start_title
-    = get_the_title(get_option('fcp_post_id_of_first_issue'));
-
-  $prev_url = get_permalink(get_adjacent_post(false,'',true))  ;
-  $pref_title = get_the_title(get_adjacent_post(false,'',true));
-  $next_url = get_permalink(get_adjacent_post(false,'',false));
-  $this_url = get_permalink($post);
-
-  $next_line = '';
-  if( $next_url != $this_url ){
-    $next_issue_url = get_permalink(get_adjacent_post(false,'',false)) ;
-    $title = get_the_title(get_adjacent_post(false,'',false));
-    $pref_format = FcpFormats::get_next_and_prefetch_headerlinks();
-    $next_line = sprintf( $pref_format,
-      $title, $next_issue_url, $title , $next_issue_url );
-  }
-
-  $headerlink_format = FcpFormats::get_headerlinks();
-  return sprintf( $headerlink_format,
-                    $start_title,
-                    $start_url,
-                    $prev_title,
-                    $prev_url,
-                    $next_line
-  );
-  return $tags ;
-}
-
-
-function fcp_inner_custom_box( $post ) {
-  $id = $post->ID;
-  $value = get_post_meta( $post->ID, '_fcp_comic_image_url', true );
-  $value = $value ? $value : '';
-  $format = FcpFormats::get_inner_custom_box_format();
-  echo sprintf( $format, $id, $value );
+  $fh = new FcpHead();
+  echo $fh->add_box();
 }
 
 /* save the image url of the comic page image */
