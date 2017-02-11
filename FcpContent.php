@@ -10,7 +10,6 @@ class FcpContent {
   private $next_id;
   private $newest_id;
 
-  private $first_image_url;
   private $next_image_url;
 
   private $first_url;
@@ -37,8 +36,6 @@ class FcpContent {
     $this->next_id = $this->next_post->ID;
     $this->newest_id = wp_get_recent_posts(array('numberposts' => 1, 'post_status' => 'publish'))[0]['ID'];
 
-    $this->first_image_url
-      = get_post_meta( $this->first_id, '_fcp_comic_image_url', true );
     $this->next_image_url
       = get_post_meta( $this->next_id, '_fcp_comic_image_url', true );
 

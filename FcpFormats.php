@@ -1,6 +1,7 @@
 <?php
 
 class FcpFormats {
+
   public static function get_preload_js(){
     return <<<'PRELOAD'
 <script language='javascript'>
@@ -46,6 +47,7 @@ HEADERLINKS2;
     return <<<'HEADERLINKS'
 <link ref="start" title="%s" href="%s" />
 <link ref="prev" title="%s" href="%s" />
+%s
 %s
 HEADERLINKS;
   }
