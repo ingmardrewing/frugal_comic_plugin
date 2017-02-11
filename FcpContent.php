@@ -62,9 +62,9 @@ class FcpContent {
 
   function rewrite () {
     if( $this->post_contains_comic_image() ){
-      $img = $this->get_image_html();
       $navi= $this->get_navi();
-      $this->content = $img . $navi ;
+      $img = $this->get_image_html($navi);
+      $this->content = $img ;
     }
   }
 
@@ -108,12 +108,21 @@ class FcpContent {
     return $url . '?_s=0';
   }
 
-  function get_image_html(){
-    $image_pattern = '/(<img[^>]+>)/';
+  function get_image_html( $navi ){
+    $image_pattern = '/(.*)(<img[^>]+>)(.*)/s';
     preg_match( $image_pattern, $this->content, $match );
-    if( $match[0] ){
+    if( $match[2] ){
       $format = FcpFormats::get_comicpage_html();
-      return sprintf( $format, $this->add_get_p( $this->next_url), $match[0] );
+      $pre    = $match[1];
+      $img    = $match[2];
+      $post   = $match[3];
+      return sprintf( $format,
+        $pre,
+        $this->add_get_p( $this->next_url),
+        $img,
+        $navi,
+        $post
+      );
     }
     return '';
   }

@@ -44,7 +44,6 @@ function fcp_modify_content( $content ){
 }
 
 
-
 ?>
 
 
