@@ -2,7 +2,7 @@
 
 class FcpFormats {
 
-  public static function get_preload_js(){
+  public static function js(){
     return <<<'PRELOAD'
 <script language='javascript'>
 jQuery(window).load(function(){

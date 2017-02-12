@@ -104,14 +104,14 @@ class FcpProcessOutput {
                       $this->prev_title,
                       $this->prev_url,
                       $next_line,
-                      $this->get_head_js()
+                      $this->js()
     );
   }
 
-  private function get_head_js()
+  private function js()
   {
     $image_url = $this->get_preload_image_url();
-    $js_format = FcpFormats::get_preload_js();
+    $js_format = FcpFormats::js();
     $js = sprintf( $js_format, $image_url );
     return $js;
   }
