@@ -9,7 +9,7 @@ jQuery(window).load(function(){
 var img = jQuery('<img>')[0];
 img.src = "%s";
 });
-</script>';
+</script>
 PRELOAD;
   }
 

@@ -1,6 +1,6 @@
 <?php
 
-class FcpProcessOutput {
+class FcpFrontend {
   private $next_post;
   private $prev_post;
 
