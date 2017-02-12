@@ -52,6 +52,7 @@ class FcpContent {
   }
 
   public function process_content ( $content ){
+    return $content;
     if (! empty($this->next_post) && empty( $this->next_image_url) ){
       return $content;
     }
