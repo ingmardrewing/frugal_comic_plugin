@@ -5,11 +5,16 @@ Version: 20170211
 */
 include 'FcpFormats.php';
 
-include 'FcpContent.php';
+include 'FcpProcessOutput.php';
+add_action( 'wp_head', 'fcp_add_html_header_elements');
+function fcp_add_html_header_elements () {
+  $fpo = new FcpProcessOutput();
+  echo $fpo->process_head();
+}
 add_filter( 'the_content', 'fcp_modify_content');
-function fcp_modify_content( $content ){
-  $c = new FcpContent();
-  return $c->process_content( $content );
+function fcp_modify_content ( $content ) {
+  $fpo = new FcpProcessOutput();
+  return $fpo->process_body( $content );
 }
 
 include 'FcpAdminMenu.php';
@@ -36,9 +41,4 @@ function fcp_save_postdata( $post_id ) {
   $fsp->save();
 }
 
-include 'FcpHead.php';
-add_action( 'wp_head', 'fcp_add_html_header_elements');
-function fcp_add_html_header_elements (){
-  $fh = new FcpHead();
-  echo $fh->add_head_content();
-}
+
