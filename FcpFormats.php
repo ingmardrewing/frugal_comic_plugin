@@ -43,7 +43,7 @@ INNER_CUSTOM_BOX;
 HEADERLINKS2;
   }
 
-  public static function get_headerlinks(){
+  public static function headerlinks(){
     return <<<'HEADERLINKS'
 <link ref="start" title="%s" href="%s" />
 <link ref="prev" title="%s" href="%s" />

@@ -95,9 +95,8 @@ class FcpProcessOutput {
       $this->title, $this->next_url, $this->title , $this->next_url );
   }
 
-
   private function format_head_data ( $next_line ){
-    $headerlink_format = FcpFormats::get_headerlinks();
+    $headerlink_format = FcpFormats::headerlinks();
     return sprintf( $headerlink_format,
                       $this->first_title,
                       $this->first_url,
