@@ -14,7 +14,7 @@ PRELOAD;
   }
 
   public static function get_comicpage_html(){
-    return '%s<a href="%s" rel="next">%s</a>%s%s';
+    return '%s<a href="%s" rel="next">%s</a>%s<p>%s</p>';
   }
 
   public static function get_navi_format(){
